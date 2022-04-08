@@ -11,10 +11,12 @@ class Decoder(nn.Module):
         resolution = 16
 
         in_channels = channels[0]
-        layers = [nn.Conv2d(args.latent_dim, in_channels, 3, 1, 1),
-                  ResidualBlock(in_channels, in_channels),
-                  NonLocalBlock(in_channels),
-                  ResidualBlock(in_channels, in_channels)]
+        layers = [
+            nn.Conv2d(args.latent_dim, in_channels, 3, 1, 1),
+            ResidualBlock(in_channels, in_channels),
+            NonLocalBlock(in_channels),
+            ResidualBlock(in_channels, in_channels),
+        ]
 
         for i in range(len(channels)):
             out_channels = channels[i]
@@ -34,4 +36,3 @@ class Decoder(nn.Module):
 
     def forward(self, x):
         return self.model(x)
-

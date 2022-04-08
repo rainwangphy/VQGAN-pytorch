@@ -7,13 +7,9 @@ import requests
 from tqdm import tqdm
 
 
-URL_MAP = {
-    "vgg_lpips": "https://heibox.uni-heidelberg.de/f/607503859c864bc1b30b/?dl=1"
-}
+URL_MAP = {"vgg_lpips": "https://heibox.uni-heidelberg.de/f/607503859c864bc1b30b/?dl=1"}
 
-CKPT_MAP = {
-    "vgg_lpips": "vgg.pth"
-}
+CKPT_MAP = {"vgg_lpips": "vgg.pth"}
 
 
 def download(url, local_path, chunk_size=1024):
@@ -43,13 +39,15 @@ class LPIPS(nn.Module):
         self.scaling_layer = ScalingLayer()
         self.channels = [64, 128, 256, 512, 512]
         self.vgg = VGG16()
-        self.lins = nn.ModuleList([
-            NetLinLayer(self.channels[0]),
-            NetLinLayer(self.channels[1]),
-            NetLinLayer(self.channels[2]),
-            NetLinLayer(self.channels[3]),
-            NetLinLayer(self.channels[4])
-        ])
+        self.lins = nn.ModuleList(
+            [
+                NetLinLayer(self.channels[0]),
+                NetLinLayer(self.channels[1]),
+                NetLinLayer(self.channels[2]),
+                NetLinLayer(self.channels[3]),
+                NetLinLayer(self.channels[4]),
+            ]
+        )
 
         self.load_from_pretrained()
 
@@ -58,7 +56,9 @@ class LPIPS(nn.Module):
 
     def load_from_pretrained(self, name="vgg_lpips"):
         ckpt = get_ckpt_path(name, "vgg_lpips")
-        self.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
+        self.load_state_dict(
+            torch.load(ckpt, map_location=torch.device("cpu")), strict=False
+        )
 
     def forward(self, real_x, fake_x):
         features_real = self.vgg(self.scaling_layer(real_x))
@@ -66,16 +66,27 @@ class LPIPS(nn.Module):
         diffs = {}
 
         for i in range(len(self.channels)):
-            diffs[i] = (norm_tensor(features_real[i]) - norm_tensor(features_fake[i])) ** 2
+            diffs[i] = (
+                norm_tensor(features_real[i]) - norm_tensor(features_fake[i])
+            ) ** 2
 
-        return sum([spatial_average(self.lins[i].model(diffs[i])) for i in range(len(self.channels))])
+        return sum(
+            [
+                spatial_average(self.lins[i].model(diffs[i]))
+                for i in range(len(self.channels))
+            ]
+        )
 
 
 class ScalingLayer(nn.Module):
     def __init__(self):
         super(ScalingLayer, self).__init__()
-        self.register_buffer("shift", torch.Tensor([-.030, -.088, -.188])[None, :, None, None])
-        self.register_buffer("scale", torch.Tensor([.458, .448, .450])[None, :, None, None])
+        self.register_buffer(
+            "shift", torch.Tensor([-0.030, -0.088, -0.188])[None, :, None, None]
+        )
+        self.register_buffer(
+            "scale", torch.Tensor([0.458, 0.448, 0.450])[None, :, None, None]
+        )
 
     def forward(self, x):
         return (x - self.shift) / self.scale
@@ -85,8 +96,7 @@ class NetLinLayer(nn.Module):
     def __init__(self, in_channels, out_channels=1):
         super(NetLinLayer, self).__init__()
         self.model = nn.Sequential(
-            nn.Dropout(),
-            nn.Conv2d(in_channels, out_channels, 1, 1, 0, bias=False)
+            nn.Dropout(), nn.Conv2d(in_channels, out_channels, 1, 1, 0, bias=False)
         )
 
 
@@ -115,7 +125,9 @@ class VGG16(nn.Module):
         h_relu4 = h
         h = self.slice5(h)
         h_relu5 = h
-        vgg_outputs = namedtuple("VGGOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3', 'relu5_3'])
+        vgg_outputs = namedtuple(
+            "VGGOutputs", ["relu1_2", "relu2_2", "relu3_3", "relu4_3", "relu5_3"]
+        )
         return vgg_outputs(h_relu1, h_relu2, h_relu3, h_relu4, h_relu5)
 
 
@@ -125,7 +137,7 @@ def norm_tensor(x):
     :param x: batch of images
     :return: normalized batch of images
     """
-    norm_factor = torch.sqrt(torch.sum(x**2, dim=1, keepdim=True))
+    norm_factor = torch.sqrt(torch.sum(x ** 2, dim=1, keepdim=True))
     return x / (norm_factor + 1e-10)
 
 

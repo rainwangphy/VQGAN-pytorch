@@ -18,7 +18,7 @@ class VQGANTransformer(nn.Module):
             "block_size": 512,
             "n_layer": 24,
             "n_head": 16,
-            "n_embd": 1024
+            "n_embd": 1024,
         }
         self.transformer = GPT(**transformer_config)
 
@@ -39,7 +39,9 @@ class VQGANTransformer(nn.Module):
 
     @torch.no_grad()
     def z_to_image(self, indices, p1=16, p2=16):
-        ix_to_vectors = self.vqgan.codebook.embedding(indices).reshape(indices.shape[0], p1, p2, 256)
+        ix_to_vectors = self.vqgan.codebook.embedding(indices).reshape(
+            indices.shape[0], p1, p2, 256
+        )
         ix_to_vectors = ix_to_vectors.permute(0, 3, 1, 2)
         image = self.vqgan.decode(ix_to_vectors)
         return image
@@ -50,7 +52,9 @@ class VQGANTransformer(nn.Module):
         sos_tokens = torch.ones(x.shape[0], 1) * self.sos_token
         sos_tokens = sos_tokens.long().to("cuda")
 
-        mask = torch.bernoulli(self.pkeep * torch.ones(indices.shape, device=indices.device))
+        mask = torch.bernoulli(
+            self.pkeep * torch.ones(indices.shape, device=indices.device)
+        )
         mask = mask.round().to(dtype=torch.int64)
         random_indices = torch.randint_like(indices, self.transformer.config.vocab_size)
         new_indices = mask * indices + (1 - mask) * random_indices
@@ -86,7 +90,7 @@ class VQGANTransformer(nn.Module):
 
             x = torch.cat((x, ix), dim=1)
 
-        x = x[:, c.shape[1]:]
+        x = x[:, c.shape[1] :]
         self.transformer.train()
         return x
 
@@ -98,8 +102,10 @@ class VQGANTransformer(nn.Module):
         sos_tokens = torch.ones(x.shape[0], 1) * self.sos_token
         sos_tokens = sos_tokens.long().to("cuda")
 
-        start_indices = indices[:, :indices.shape[1] // 2]
-        sample_indices = self.sample(start_indices, sos_tokens, steps=indices.shape[1] - start_indices.shape[1])
+        start_indices = indices[:, : indices.shape[1] // 2]
+        sample_indices = self.sample(
+            start_indices, sos_tokens, steps=indices.shape[1] - start_indices.shape[1]
+        )
         half_sample = self.z_to_image(sample_indices)
 
         start_indices = indices[:, :0]
@@ -114,19 +120,3 @@ class VQGANTransformer(nn.Module):
         log["full_sample"] = full_sample
 
         return log, torch.concat((x, x_rec, half_sample, full_sample))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

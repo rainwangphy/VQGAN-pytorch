@@ -6,7 +6,9 @@ import torch.nn.functional as F
 class GroupNorm(nn.Module):
     def __init__(self, channels):
         super(GroupNorm, self).__init__()
-        self.gn = nn.GroupNorm(num_groups=32, num_channels=channels, eps=1e-6, affine=True)
+        self.gn = nn.GroupNorm(
+            num_groups=32, num_channels=channels, eps=1e-6, affine=True
+        )
 
     def forward(self, x):
         return self.gn(x)
@@ -28,7 +30,7 @@ class ResidualBlock(nn.Module):
             nn.Conv2d(in_channels, out_channels, 3, 1, 1),
             GroupNorm(out_channels),
             Swish(),
-            nn.Conv2d(out_channels, out_channels, 3, 1, 1)
+            nn.Conv2d(out_channels, out_channels, 3, 1, 1),
         )
 
         if in_channels != out_channels:
@@ -81,13 +83,13 @@ class NonLocalBlock(nn.Module):
 
         b, c, h, w = q.shape
 
-        q = q.reshape(b, c, h*w)
+        q = q.reshape(b, c, h * w)
         q = q.permute(0, 2, 1)
-        k = k.reshape(b, c, h*w)
-        v = v.reshape(b, c, h*w)
+        k = k.reshape(b, c, h * w)
+        v = v.reshape(b, c, h * w)
 
         attn = torch.bmm(q, k)
-        attn = attn * (int(c)**(-0.5))
+        attn = attn * (int(c) ** (-0.5))
         attn = F.softmax(attn, dim=2)
         attn = attn.permute(0, 2, 1)
 
@@ -95,15 +97,3 @@ class NonLocalBlock(nn.Module):
         A = A.reshape(b, c, h, w)
 
         return x + A
-
-
-
-
-
-
-
-
-
-
-
-

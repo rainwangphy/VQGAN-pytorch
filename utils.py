@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 #                  Data Utils
 # --------------------------------------------- #
 
+
 class ImagePaths(Dataset):
     def __init__(self, path, size=None):
         self.size = size
@@ -51,11 +52,12 @@ def load_data(args):
 #            for Encoder, Decoder etc.
 # --------------------------------------------- #
 
+
 def weights_init(m):
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if classname.find("Conv") != -1:
         nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
+    elif classname.find("BatchNorm") != -1:
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
 
